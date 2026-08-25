@@ -1,9 +1,9 @@
+import asyncio
 import structlog
 from typing import List, Dict, Any
 from sqlalchemy import text
 from app.core.database import AsyncSessionLocal
 from app.services.embedder import embed_single
-from app.core.config import settings
 
 logger = structlog.get_logger()
 
@@ -19,7 +19,7 @@ async def find_similar_comments(
     limit: int = MAX_RESULTS
 ) -> List[Dict[str, Any]]:
     """Find review comments from past PRs similar to the given code hunk."""
-    
+
     if len(hunk.strip()) < 30:
         logger.info("hunk_too_short_skipped", hunk_length=len(hunk.strip()))
         return []
@@ -28,7 +28,6 @@ async def find_similar_comments(
     query_vector_str = "[" + ",".join(str(x) for x in query_vector) + "]"
 
     async with AsyncSessionLocal() as session:
-        await session.execute(text(f"SET hnsw.ef_search = {EF_SEARCH}"))
         result = await session.execute(
             text("""
                 SELECT
@@ -104,6 +103,8 @@ async def retrieve_for_pr(
 
     all_results = []
     for i, hunk in enumerate(hunks):
+        if i > 0:
+            await asyncio.sleep(20)
         similar = await find_similar_comments(hunk, repo_owner, repo_name)
         if similar:
             logger.info(
