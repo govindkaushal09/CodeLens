@@ -126,6 +126,7 @@ async def retrieve_for_pr(
     return deduplicated
 
 
+
 def split_diff_into_hunks(diff: str) -> List[str]:
     hunks = []
     current_hunk = []
